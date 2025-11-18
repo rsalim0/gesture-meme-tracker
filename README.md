@@ -81,6 +81,59 @@ Then open `http://localhost:8000` in your browser.
 - Webcam
 - HTTPS connection (required for camera access - automatically handled by Vercel/GitHub Pages)
 
+## 🛠️ JavaScript/Web Setup
+
+### Local Development Setup
+
+1. **Clone or download this repository:**
+   ```bash
+   git clone https://github.com/YOUR_USERNAME/gesture-meme-tracker.git
+   cd gesture-meme-tracker
+   ```
+
+2. **No build step required!** 
+   - The web version uses CDN-hosted MediaPipe libraries
+   - No npm, webpack, or build tools needed
+   - Pure vanilla JavaScript
+
+3. **File Structure:**
+   ```
+   gesture-meme-tracker/
+   ├── index.html       # Main HTML file
+   ├── style.css        # Styling
+   ├── script.js        # JavaScript logic
+   ├── images/          # Meme videos/images folder
+   └── vercel.json      # Vercel config
+   ```
+
+4. **Run Locally:**
+   ```bash
+   # Option 1: Python HTTP server
+   python -m http.server 8000
+   
+   # Option 2: Node.js (if installed)
+   npx http-server -p 8000
+   
+   # Option 3: VS Code Live Server extension
+   # Right-click index.html → "Open with Live Server"
+   ```
+
+5. **Open in Browser:**
+   - Navigate to `http://localhost:8000`
+   - **Note:** Camera won't work on `localhost` without HTTPS
+   - For camera testing, deploy to Vercel or use a local HTTPS setup
+
+### Web Version Dependencies
+
+The web version uses CDN-hosted libraries (no installation needed):
+
+- **MediaPipe Hands** - Hand gesture detection
+- **MediaPipe Face Mesh** - Face detection for JIJIJA gesture
+- **MediaPipe Camera Utils** - Webcam access
+- **MediaPipe Drawing Utils** - Visual feedback
+
+All libraries are loaded from `cdn.jsdelivr.net` in `index.html`.
+
 ---
 
 # 🖥️ Desktop Version (Python)
@@ -228,6 +281,152 @@ gesture-meme-tracker-1/
 - [ ] Deployed to Vercel or GitHub Pages
 - [ ] Tested on different devices (desktop, mobile, tablet)
 - [ ] Camera permissions working correctly
+
+---
+
+## 🤝 Contributing
+
+### Adding More Memes
+
+Want to add your own memes? Here's how:
+
+#### Step 1: Add Your Meme File
+
+1. **Add your meme to the `images/` folder:**
+   ```bash
+   # Copy your meme file to the images folder
+   cp /path/to/your/meme.mp4 images/your_meme_name.mp4
+   # OR for images:
+   cp /path/to/your/meme.jpg images/your_meme_name.jpg
+   ```
+
+2. **Supported formats:**
+   - Videos: `.mp4`, `.webm`, `.mov`
+   - Images: `.jpg`, `.jpeg`, `.png`, `.gif`
+
+#### Step 2: Add Gesture Detection (Optional)
+
+If you want to create a new gesture:
+
+**For Web Version (`script.js`):**
+
+1. **Add your gesture to the `GESTURE_MEMES` object:**
+   ```javascript
+   const GESTURE_MEMES = {
+       // ... existing gestures ...
+       "your_gesture": "images/your_meme_name.mp4",
+   };
+   ```
+
+2. **Add detection logic in `detectGesture()` function:**
+   ```javascript
+   function detectGesture(handLandmarks, allHands, faceLandmarks) {
+       // ... existing detection code ...
+       
+       // YOUR NEW GESTURE
+       if (numExtended === 2 && extendedFingers.includes("index") && extendedFingers.includes("middle")) {
+           // Check if other fingers are closed
+           if (!ringExtended && !pinkyExtended) {
+               return "your_gesture";
+           }
+       }
+       
+       return "none";
+   }
+   ```
+
+3. **Update `index.html` to show your gesture in the guide:**
+   ```html
+   <div class="gesture-item">
+       <span class="emoji">✌️</span>
+       <strong>YOUR_GESTURE</strong>
+       <p>Description of gesture</p>
+   </div>
+   ```
+
+**For Desktop Version (`gesture_meme_tracker.py`):**
+
+1. **Add to `GESTURE_MEMES` dictionary:**
+   ```python
+   GESTURE_MEMES = {
+       # ... existing gestures ...
+       "your_gesture": "your_meme_name.mp4",
+   }
+   ```
+
+2. **Add detection logic in `detect_gesture()` function:**
+   ```python
+   def detect_gesture(hand_landmarks, all_hands=None, face_landmarks=None):
+       # ... existing code ...
+       
+       # YOUR NEW GESTURE
+       if num_extended == 2 and "index" in extended_fingers and "middle" in extended_fingers:
+           ring_extended = is_finger_extended(16, 14, 13)
+           pinky_extended = is_finger_extended(20, 18, 17)
+           if not ring_extended and not pinky_extended:
+               return "your_gesture"
+       
+       return "none"
+   ```
+
+3. **Update the help text in `main()` function**
+
+#### Step 3: Test Your Changes
+
+1. **Test locally:**
+   ```bash
+   # Web version
+   python -m http.server 8000
+   
+   # Desktop version
+   python gesture_meme_tracker.py
+   ```
+
+2. **Make the gesture and verify the meme appears**
+
+#### Step 4: Commit and Share
+
+```bash
+git add images/your_meme_name.mp4 script.js gesture_meme_tracker.py index.html
+git commit -m "Add new meme: your_gesture"
+git push origin main
+```
+
+### Adding More Gestures
+
+To add a completely new gesture:
+
+1. **Understand MediaPipe landmarks:**
+   - Each hand has 21 landmarks
+   - Index finger: tip=8, PIP=6, MCP=5
+   - Middle finger: tip=12, PIP=10, MCP=9
+   - Ring finger: tip=16, PIP=14, MCP=13
+   - Pinky: tip=20, PIP=18, MCP=17
+   - Wrist: 0
+
+2. **Check existing gestures** in `script.js` or `gesture_meme_tracker.py` for reference
+
+3. **Add your detection logic** following the pattern above
+
+4. **Test thoroughly** with different hand positions and lighting
+
+### Meme Guidelines
+
+- **Videos:** Keep file sizes reasonable (< 5MB recommended for web performance)
+- **Images:** Use `.jpg` for photos, `.png` for graphics with transparency
+- **Naming:** Use lowercase with underscores (e.g., `thumbs_up.jpg`)
+- **Content:** Keep it appropriate and fun!
+
+### Pull Requests
+
+1. Fork the repository
+2. Create a branch: `git checkout -b add-new-meme`
+3. Add your meme and code changes
+4. Commit: `git commit -m "Add: Description of what you added"`
+5. Push: `git push origin add-new-meme`
+6. Open a Pull Request on GitHub
+
+---
 
 ## 📄 License
 
