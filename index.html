@@ -4,6 +4,52 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gesture Meme Tracker - Clash Royale Edition</title>
+    <!-- Geist Fonts -->
+    <link rel="preconnect" href="https://cdn.jsdelivr.net">
+    <style>
+        @font-face {
+            font-family: 'Geist Sans';
+            src: url('https://cdn.jsdelivr.net/gh/vercel/geist-font@main/packages/geist-sans/dist/woff2/Geist-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Geist Sans';
+            src: url('https://cdn.jsdelivr.net/gh/vercel/geist-font@main/packages/geist-sans/dist/woff2/Geist-Medium.woff2') format('woff2');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Geist Sans';
+            src: url('https://cdn.jsdelivr.net/gh/vercel/geist-font@main/packages/geist-sans/dist/woff2/Geist-SemiBold.woff2') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Geist Sans';
+            src: url('https://cdn.jsdelivr.net/gh/vercel/geist-font@main/packages/geist-sans/dist/woff2/Geist-Bold.woff2') format('woff2');
+            font-weight: 700;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Geist Mono';
+            src: url('https://cdn.jsdelivr.net/gh/vercel/geist-font@main/packages/geist-mono/dist/woff2/GeistMono-Regular.woff2') format('woff2');
+            font-weight: 400;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Geist Mono';
+            src: url('https://cdn.jsdelivr.net/gh/vercel/geist-font@main/packages/geist-mono/dist/woff2/GeistMono-Medium.woff2') format('woff2');
+            font-weight: 500;
+            font-style: normal;
+        }
+        @font-face {
+            font-family: 'Geist Mono';
+            src: url('https://cdn.jsdelivr.net/gh/vercel/geist-font@main/packages/geist-mono/dist/woff2/GeistMono-SemiBold.woff2') format('woff2');
+            font-weight: 600;
+            font-style: normal;
+        }
+    </style>
     <link rel="stylesheet" href="style.css">
     
     <!-- MediaPipe Dependencies -->
@@ -68,6 +114,21 @@
                         <p>One finger up (index)</p>
                     </div>
                     <div class="gesture-item">
+                        <span class="emoji">⏸️</span>
+                        <strong>TIMEOUT</strong>
+                        <p>T-shape (hands T)</p>
+                    </div>
+                    <div class="gesture-item">
+                        <span class="emoji">🤔</span>
+                        <strong>THINKING</strong>
+                        <p>Finger on chin/lip</p>
+                    </div>
+                    <div class="gesture-item">
+                        <span class="emoji">✌️</span>
+                        <strong>PEACE</strong>
+                        <p>Peace sign (V-sign)</p>
+                    </div>
+                    <div class="gesture-item">
                         <span class="emoji">👌</span>
                         <strong>DEFAULT</strong>
                         <p>Neutral state</p>
@@ -88,6 +149,7 @@
         <footer>
             <p>Made with ❤️ using MediaPipe and JavaScript</p>
             <p class="tip">💡 Tip: Ensure good lighting and keep your hand clearly visible!</p>
+            <p class="built-by">Built by <a href="https://salim.engineer" target="_blank" rel="noopener noreferrer">this a retarded mf</a></p>
         </footer>
     </div>
 
