@@ -13,14 +13,18 @@ Works in any browser, deploy to the internet, accessible anywhere!
 ## 🚀 Features
 
 - **Real-time hand gesture detection** using MediaPipe Hands & Face Mesh
-- **5 recognizable gestures**:
-  - 😂 **JIJIJA** - Just laugh (open mouth)
+- **8 recognizable gestures**:
+  - 😂 **JIJIJA** - Just laugh (mouth open)
   - 🤐 **MIMIMI** - Both hands closed (fists)
   - ⚖️ **SIXSEVEN** - Balance pose (hands extended wide)
   - 🤫 **CERRAO** - One finger up (index finger)
+  - ⏸️ **TIMEOUT** - T-shape gesture (one hand horizontal, other vertical)
+  - 🤔 **THINKING** - Index finger on chin/lip (thinking pose)
+  - ✌️ **PEACE** - Peace sign (V-sign with index and middle fingers)
   - 👌 **DEFAULT** - Neutral state
 - **Dynamic meme display** - shows different meme videos/images for each gesture
 - **Side-by-side view** - webcam feed and meme displayed together
+- **Modern UI** - Clean, light theme with Geist fonts
 - **Beginner-friendly** - fully commented and easy to understand
 
 ---
@@ -183,6 +187,9 @@ Both versions use MediaPipe's hand landmarks (21 points per hand) and face mesh 
 - 🤐 **MIMIMI** - Both hands with all fingers closed (fists)
 - ⚖️ **SIXSEVEN** - Both hands with open palms spread apart horizontally
 - 🤫 **CERRAO** - One hand with only the index finger extended
+- ⏸️ **TIMEOUT** - T-shape with one hand horizontal and the other vertical touching it
+- 🤔 **THINKING** - Index finger extended and touching chin/lip area
+- ✌️ **PEACE** - Index and middle fingers extended (V-sign), ring and pinky closed
 - 👌 **DEFAULT** - Any other hand position or no hands detected
 
 ## 🎨 Customization
@@ -256,7 +263,7 @@ Edit these files:
 ## 📁 Project Structure
 
 ```
-gesture-meme-tracker-1/
+gesture-meme-tracker/
 ├── index.html              # Web app main page
 ├── style.css               # Web app styling
 ├── script.js               # Web app JavaScript (MediaPipe Web)
@@ -265,12 +272,18 @@ gesture-meme-tracker-1/
 ├── requirements.txt        # Python dependencies
 ├── run.sh                  # Python launcher script
 ├── images/                 # Meme videos and images
-│   ├── JIJIJA.mp4
-│   ├── MIMIMI.mp4
-│   ├── SIXSEVEN.mp4
-│   ├── CERRAO.mp4
-│   └── ok_sign.jpg
-└── README.md
+│   ├── JIJIJA.mp4          # Laughing gesture
+│   ├── MIMIMI.mp4          # Fists gesture
+│   ├── SIXSEVEN.mp4        # Balance pose gesture
+│   ├── CERRAO.mp4          # One finger gesture
+│   ├── open_palm.jpg       # Timeout gesture
+│   ├── thumbs_up.jpg       # Thinking gesture
+│   ├── peace.jpg           # Peace sign gesture
+│   ├── ok_sign.jpg         # Default/neutral gesture
+│   └── ...                 # Other meme files
+├── venv/                   # Python virtual environment (local only)
+├── .gitignore              # Git ignore rules
+└── README.md               # This file
 ```
 
 ## 🌟 Deployment Checklist
