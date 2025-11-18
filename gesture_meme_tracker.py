@@ -21,6 +21,7 @@ GESTURE_MEMES = {
     "cerrao": "CERRAO.mp4",      # One finger on jaw
     "timeout": "open_palm.jpg",  # Timeout gesture (T-shape)
     "thinking": "thumbs_up.jpg", # Thinking gesture (finger on chin)
+    "peace": "peace.jpg",         # Peace sign (V-sign)
     "none": "ok_sign.jpg"  # Default/neutral gesture
 }
 
@@ -153,6 +154,16 @@ def detect_gesture(hand_landmarks, all_hands=None, face_landmarks=None):
     # CERRAO - One hand closed but one finger (index) extended
     if num_extended == 1 and "index" in extended_fingers:
         return "cerrao"
+    
+    # PEACE - Peace sign (V-sign): index and middle fingers extended, ring and pinky closed
+    if num_extended == 2 and "index" in extended_fingers and "middle" in extended_fingers:
+        # Make sure ring and pinky are NOT extended (closed)
+        ring_extended = is_finger_extended(16, 14, 13)
+        pinky_extended = is_finger_extended(20, 18, 17)
+        
+        # Peace sign: index and middle extended, ring and pinky closed
+        if not ring_extended and not pinky_extended:
+            return "peace"
     
     # TIMEOUT - T-shape gesture (one hand horizontal, other vertical)
     # Check this BEFORE SIXSEVEN since both require two hands with extended fingers
@@ -343,6 +354,7 @@ def create_placeholder_image(gesture_name):
         "cerrao": (147, 20, 255),       # Purple
         "timeout": (0, 255, 255),       # Cyan
         "thinking": (255, 200, 0),      # Gold/Yellow
+        "peace": (0, 255, 0),           # Green
         "none": (128, 128, 128)         # Gray
     }
     
@@ -394,6 +406,7 @@ def main():
     print("🤫 CERRAO - One finger up (index finger)")
     print("⏸️  TIMEOUT - T-shape gesture (one hand horizontal, other vertical)")
     print("🤔 THINKING - Index finger on chin/lip (thinking pose)")
+    print("✌️  PEACE - Peace sign (V-sign with index and middle fingers)")
     print("👌 Default - Neutral state (no gesture)")
     print("\nMake sure your hand(s) are visible to the camera!")
     print("=" * 60)
