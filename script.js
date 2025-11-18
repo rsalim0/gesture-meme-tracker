@@ -31,6 +31,9 @@ const memeVideoElement = document.getElementById('memeVideo');
 const memeImageElement = document.getElementById('memeImage');
 const loadingElement = document.getElementById('loading');
 const startButton = document.getElementById('startButton');
+const statusText = document.getElementById('statusText');
+const statusSubtext = document.getElementById('statusSubtext');
+const statusProgress = document.getElementById('statusProgress');
 
 // Debug elements
 const debugInfo = document.getElementById('debugInfo');
@@ -44,9 +47,20 @@ const mouthWidthElement = document.getElementById('mouthWidth');
 debugInfo.style.display = 'block';
 
 /**
+ * Update status indicator
+ */
+function updateStatus(text, progress, subtext) {
+    if (statusText) statusText.textContent = text;
+    if (statusProgress) statusProgress.style.width = progress + '%';
+    if (statusSubtext && subtext) statusSubtext.textContent = subtext;
+}
+
+/**
  * Initialize MediaPipe Hands
  */
 function initHands() {
+    updateStatus('⏳ Loading hand detection model...', 30, 'Downloading MediaPipe Hands (~2MB)');
+    
     hands = new Hands({
         locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`;
@@ -61,6 +75,11 @@ function initHands() {
     });
 
     hands.onResults(onResults);
+    
+    // Simulate progress (MediaPipe loads async)
+    setTimeout(() => {
+        updateStatus('✅ Hand detection loaded!', 50, 'Loading face detection...');
+    }, 500);
 }
 
 /**
@@ -69,6 +88,8 @@ function initHands() {
 let storedFaceLandmarks = null;
 
 function initFaceMesh() {
+    updateStatus('⏳ Loading face detection model...', 60, 'Downloading MediaPipe Face Mesh (~3MB)');
+    
     faceMesh = new FaceMesh({
         locateFile: (file) => {
             return `https://cdn.jsdelivr.net/npm/@mediapipe/face_mesh/${file}`;
@@ -97,6 +118,11 @@ function initFaceMesh() {
             }
         }
     });
+    
+    // Simulate progress
+    setTimeout(() => {
+        updateStatus('✅ Face detection loaded!', 80, 'Initializing camera...');
+    }, 500);
 }
 
 /**
@@ -527,6 +553,8 @@ function updateGestureDisplay(gesture) {
  */
 async function initCamera() {
     try {
+        updateStatus('📸 Starting camera...', 90, 'Requesting camera permissions...');
+        
         camera = new Camera(webcamElement, {
             onFrame: async () => {
                 await hands.send({ image: webcamElement });
@@ -537,8 +565,15 @@ async function initCamera() {
 
         await camera.start();
         
-        // Hide loading, show video
-        loadingElement.style.display = 'none';
+        // Wait a bit for video to start
+        await new Promise(resolve => setTimeout(resolve, 300));
+        
+        updateStatus('✅ Ready!', 100, 'Gestures are now being detected...');
+        
+        // Hide loading after a moment
+        setTimeout(() => {
+            loadingElement.style.display = 'none';
+        }, 1000);
         
         // Set canvas size to match video
         canvasElement.width = webcamElement.videoWidth || 640;
@@ -550,10 +585,13 @@ async function initCamera() {
         console.log('Camera started successfully!');
     } catch (error) {
         console.error('Error starting camera:', error);
+        updateStatus('❌ Camera Error', 100, 'Please allow camera access and refresh the page.');
         loadingElement.innerHTML = `
-            <p>❌ Camera Error</p>
-            <p style="font-size: 0.9rem;">Please allow camera access and refresh the page.</p>
-            <button id="retryButton" onclick="location.reload()">Retry</button>
+            <div id="statusIndicator">
+                <p>❌ Camera Error</p>
+                <p class="status-subtext">Please allow camera access and refresh the page.</p>
+                <button id="retryButton" onclick="location.reload()" style="margin-top: 20px; padding: 12px 24px; background: #171717; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Geist Sans', sans-serif;">Retry</button>
+            </div>
         `;
     }
 }
@@ -576,17 +614,32 @@ function startFPSCounter() {
 async function init() {
     console.log('Initializing Gesture Meme Tracker...');
     
+    // Initial status
+    updateStatus('⏳ Initializing...', 10, 'Setting up MediaPipe...');
+    
     // Initialize MediaPipe
     initHands();
     initFaceMesh();
+    
+    // Wait a bit for models to load
+    await new Promise(resolve => setTimeout(resolve, 1000));
     
     // Check if user needs to click to start (some browsers require user interaction)
     try {
         await initCamera();
     } catch (error) {
+        updateStatus('📸 Camera Ready', 90, 'Click below to start the camera');
         // Show start button if autoplay is blocked
         startButton.style.display = 'block';
-        startButton.onclick = initCamera;
+        startButton.onclick = async () => {
+            try {
+                await initCamera();
+                startButton.style.display = 'none';
+            } catch (e) {
+                console.error('Failed to start camera:', e);
+                updateStatus('❌ Failed to start camera', 100, 'Please check permissions');
+            }
+        };
     }
 }
 

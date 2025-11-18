@@ -83,7 +83,13 @@
                     <video id="memeVideo" loop muted playsinline style="display: none;"></video>
                     <img id="memeImage" style="display: none;" alt="Meme">
                     <div class="loading" id="loading">
-                        <p>📸 Initializing camera...</p>
+                        <div id="statusIndicator">
+                            <p id="statusText">⏳ Loading MediaPipe models...</p>
+                            <div class="status-bar">
+                                <div class="status-progress" id="statusProgress"></div>
+                            </div>
+                            <p id="statusSubtext" class="status-subtext">This may take a few seconds on first load</p>
+                        </div>
                         <button id="startButton" style="display: none;">Start Camera</button>
                     </div>
                 </div>
