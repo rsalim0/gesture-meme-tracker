@@ -22,6 +22,12 @@ let lastGesture = "none";
 let fpsInterval, startTime, now, then, elapsed;
 let fpsCounter = 0;
 
+// Loading state tracking
+let handsLoaded = false;
+let faceMeshLoaded = false;
+let cameraStarted = false;
+let firstFrameProcessed = false;
+
 // DOM Elements
 const webcamElement = document.getElementById('webcam');
 const canvasElement = document.getElementById('canvas');
@@ -59,7 +65,7 @@ function updateStatus(text, progress, subtext) {
  * Initialize MediaPipe Hands
  */
 function initHands() {
-    updateStatus('⏳ Loading hand detection model...', 30, 'Downloading MediaPipe Hands (~2MB)');
+    updateStatus('⏳ Loading hand detection model...', 20, 'Downloading MediaPipe Hands (~2MB)');
     
     hands = new Hands({
         locateFile: (file) => {
@@ -75,11 +81,6 @@ function initHands() {
     });
 
     hands.onResults(onResults);
-    
-    // Simulate progress (MediaPipe loads async)
-    setTimeout(() => {
-        updateStatus('✅ Hand detection loaded!', 50, 'Loading face detection...');
-    }, 500);
 }
 
 /**
@@ -88,7 +89,7 @@ function initHands() {
 let storedFaceLandmarks = null;
 
 function initFaceMesh() {
-    updateStatus('⏳ Loading face detection model...', 60, 'Downloading MediaPipe Face Mesh (~3MB)');
+    updateStatus('⏳ Loading face detection model...', 40, 'Downloading MediaPipe Face Mesh (~3MB)');
     
     faceMesh = new FaceMesh({
         locateFile: (file) => {
@@ -105,6 +106,13 @@ function initFaceMesh() {
 
     // Set up face mesh results handler
     faceMesh.onResults((results) => {
+        // Mark face mesh as loaded when first results arrive
+        if (!faceMeshLoaded) {
+            faceMeshLoaded = true;
+            updateStatus('✅ Face detection loaded!', 60, 'Models ready, starting camera...');
+            checkAllLoaded();
+        }
+        
         if (results.multiFaceLandmarks && results.multiFaceLandmarks.length > 0) {
             storedFaceLandmarks = results.multiFaceLandmarks[0];
             
@@ -118,11 +126,6 @@ function initFaceMesh() {
             }
         }
     });
-    
-    // Simulate progress
-    setTimeout(() => {
-        updateStatus('✅ Face detection loaded!', 80, 'Initializing camera...');
-    }, 500);
 }
 
 /**
@@ -140,53 +143,53 @@ function isFingerExtended(landmarks, tipIdx, pipIdx, mcpIdx) {
  */
 function detectGesture(handLandmarks, allHands, faceLandmarks) {
     try {
-        if (!handLandmarks) {
-            // Check for face-only gestures (JIJIJA)
+    if (!handLandmarks) {
+        // Check for face-only gestures (JIJIJA)
             if (faceLandmarks && Array.isArray(faceLandmarks)) {
-                return detectFaceGesture(faceLandmarks);
-            }
-            return "none";
+            return detectFaceGesture(faceLandmarks);
         }
+        return "none";
+    }
 
-        const landmarks = handLandmarks;
+    const landmarks = handLandmarks;
 
-        // Count extended fingers
-        const extendedFingers = [];
+    // Count extended fingers
+    const extendedFingers = [];
 
-        // Index finger (8: tip, 6: PIP, 5: MCP)
-        if (isFingerExtended(landmarks, 8, 6, 5)) {
-            extendedFingers.push("index");
-        }
+    // Index finger (8: tip, 6: PIP, 5: MCP)
+    if (isFingerExtended(landmarks, 8, 6, 5)) {
+        extendedFingers.push("index");
+    }
 
-        // Middle finger (12: tip, 10: PIP, 9: MCP)
-        if (isFingerExtended(landmarks, 12, 10, 9)) {
-            extendedFingers.push("middle");
-        }
+    // Middle finger (12: tip, 10: PIP, 9: MCP)
+    if (isFingerExtended(landmarks, 12, 10, 9)) {
+        extendedFingers.push("middle");
+    }
 
-        // Ring finger (16: tip, 14: PIP, 13: MCP)
-        if (isFingerExtended(landmarks, 16, 14, 13)) {
-            extendedFingers.push("ring");
-        }
+    // Ring finger (16: tip, 14: PIP, 13: MCP)
+    if (isFingerExtended(landmarks, 16, 14, 13)) {
+        extendedFingers.push("ring");
+    }
 
-        // Pinky finger (20: tip, 18: PIP, 17: MCP)
-        if (isFingerExtended(landmarks, 20, 18, 17)) {
-            extendedFingers.push("pinky");
-        }
+    // Pinky finger (20: tip, 18: PIP, 17: MCP)
+    if (isFingerExtended(landmarks, 20, 18, 17)) {
+        extendedFingers.push("pinky");
+    }
 
-        const numExtended = extendedFingers.length;
+    const numExtended = extendedFingers.length;
         
         // Debug: log finger detection
         if (numExtended > 0) {
             console.log('Extended fingers:', extendedFingers, 'Count:', numExtended);
         }
 
-        // JIJIJA - Laughing (mouth open detection)
+    // JIJIJA - Laughing (mouth open detection)
         if (faceLandmarks && Array.isArray(faceLandmarks)) {
-            const jijijaResult = detectFaceGesture(faceLandmarks);
-            if (jijijaResult === "jijija") {
-                return "jijija";
-            }
+        const jijijaResult = detectFaceGesture(faceLandmarks);
+        if (jijijaResult === "jijija") {
+            return "jijija";
         }
+    }
 
     // MIMIMI - Both hands closed (fists)
     if (allHands && allHands.length === 2) {
@@ -412,6 +415,19 @@ function detectFaceGesture(faceLandmarks) {
  * Handle results from MediaPipe
  */
 async function onResults(results) {
+    // Mark hands as loaded when first frame is processed
+    if (!handsLoaded && results.image) {
+        handsLoaded = true;
+        updateStatus('✅ Hand detection loaded!', 50, 'Loading face detection model...');
+        checkAllLoaded();
+    }
+    
+    // Track first frame processing
+    if (!firstFrameProcessed && results.image) {
+        firstFrameProcessed = true;
+        checkAllLoaded();
+    }
+    
     // Update FPS
     fpsCounter++;
     
@@ -425,7 +441,7 @@ async function onResults(results) {
     // Process with face mesh to detect mouth (do this first so landmarks are ready)
     if (results.image && faceMesh) {
         try {
-            await faceMesh.send({ image: results.image });
+        await faceMesh.send({ image: results.image });
         } catch (e) {
             console.error('Face mesh error:', e);
         }
@@ -455,11 +471,11 @@ async function onResults(results) {
 
         // Detect gesture
         try {
-            detectedGesture = detectGesture(
-                results.multiHandLandmarks[0],
-                results.multiHandLandmarks,
-                currentFaceLandmarks
-            );
+        detectedGesture = detectGesture(
+            results.multiHandLandmarks[0],
+            results.multiHandLandmarks,
+            currentFaceLandmarks
+        );
         } catch (e) {
             console.error('Gesture detection error:', e);
             detectedGesture = "none";
@@ -472,7 +488,7 @@ async function onResults(results) {
         
         // Check for face-only gestures
         try {
-            detectedGesture = detectGesture(null, null, currentFaceLandmarks);
+        detectedGesture = detectGesture(null, null, currentFaceLandmarks);
         } catch (e) {
             console.error('Face-only gesture detection error:', e);
             detectedGesture = "none";
@@ -503,23 +519,23 @@ Object.defineProperty(window, 'faceLandmarks', {
  */
 function updateGestureDisplay(gesture) {
     try {
-        // Update label
-        const gestureText = gesture.charAt(0).toUpperCase() + gesture.slice(1);
-        gestureLabelElement.textContent = `Gesture: ${gestureText}`;
+    // Update label
+    const gestureText = gesture.charAt(0).toUpperCase() + gesture.slice(1);
+    gestureLabelElement.textContent = `Gesture: ${gestureText}`;
 
-        // Update meme
-        const memeFile = GESTURE_MEMES[gesture];
+    // Update meme
+    const memeFile = GESTURE_MEMES[gesture];
         
         if (!memeFile) {
             console.error('No meme file found for gesture:', gesture);
             return;
         }
+    
+    if (memeFile.endsWith('.mp4') || memeFile.endsWith('.webm')) {
+        // Video meme
+        memeImageElement.style.display = 'none';
+        memeVideoElement.style.display = 'block';
         
-        if (memeFile.endsWith('.mp4') || memeFile.endsWith('.webm')) {
-            // Video meme
-            memeImageElement.style.display = 'none';
-            memeVideoElement.style.display = 'block';
-            
             // Get full URL to avoid path issues
             const fullPath = memeFile.startsWith('http') ? memeFile : 
                            (memeFile.startsWith('/') ? memeFile : '/' + memeFile);
@@ -530,13 +546,13 @@ function updateGestureDisplay(gesture) {
                 memeVideoElement.play().catch(e => console.log('Video play failed:', e));
             } else if (!memeVideoElement.src) {
                 memeVideoElement.src = fullPath;
-                memeVideoElement.load();
-                memeVideoElement.play().catch(e => console.log('Video play failed:', e));
-            }
-        } else {
-            // Image meme
-            memeVideoElement.style.display = 'none';
-            memeImageElement.style.display = 'block';
+            memeVideoElement.load();
+            memeVideoElement.play().catch(e => console.log('Video play failed:', e));
+        }
+    } else {
+        // Image meme
+        memeVideoElement.style.display = 'none';
+        memeImageElement.style.display = 'block';
             
             // Get full URL to avoid path issues
             const fullPath = memeFile.startsWith('http') ? memeFile : 
@@ -549,15 +565,61 @@ function updateGestureDisplay(gesture) {
 }
 
 /**
+ * Check if everything is loaded and ready
+ */
+function checkAllLoaded() {
+    if (cameraStarted && handsLoaded && faceMeshLoaded && firstFrameProcessed) {
+        updateStatus('✅ Ready!', 100, 'Gestures are now being detected...');
+        
+        // Hide loading after a moment
+        setTimeout(() => {
+            if (loadingElement) {
+                loadingElement.style.display = 'none';
+            }
+        }, 1500);
+    } else {
+        // Update progress based on what's loaded
+        let progress = 10;
+        if (handsLoaded) progress += 40;
+        if (faceMeshLoaded) progress += 20;
+        if (cameraStarted) progress += 20;
+        if (firstFrameProcessed) progress += 10;
+        
+        if (cameraStarted && !firstFrameProcessed) {
+            updateStatus('⏳ Processing first frame...', progress, 'Initializing detection...');
+        }
+    }
+}
+
+/**
+ * Monitor camera ready state
+ */
+function monitorCameraReady() {
+    const checkReady = setInterval(() => {
+        if (webcamElement && webcamElement.readyState >= 2 && !cameraStarted) {
+            cameraStarted = true;
+            updateStatus('📸 Camera streaming...', 80, 'Waiting for first detection...');
+            checkAllLoaded();
+            clearInterval(checkReady);
+        }
+    }, 100);
+    
+    // Stop checking after 5 seconds
+    setTimeout(() => clearInterval(checkReady), 5000);
+}
+
+/**
  * Initialize camera
  */
 async function initCamera() {
     try {
-        updateStatus('📸 Starting camera...', 90, 'Requesting camera permissions...');
+        updateStatus('📸 Starting camera...', 70, 'Requesting camera permissions...');
         
         camera = new Camera(webcamElement, {
             onFrame: async () => {
+                if (hands) {
                 await hands.send({ image: webcamElement });
+                }
             },
             width: 640,
             height: 480
@@ -565,15 +627,8 @@ async function initCamera() {
 
         await camera.start();
         
-        // Wait a bit for video to start
-        await new Promise(resolve => setTimeout(resolve, 300));
-        
-        updateStatus('✅ Ready!', 100, 'Gestures are now being detected...');
-        
-        // Hide loading after a moment
-        setTimeout(() => {
-            loadingElement.style.display = 'none';
-        }, 1000);
+        // Start monitoring camera ready state
+        monitorCameraReady();
         
         // Set canvas size to match video
         canvasElement.width = webcamElement.videoWidth || 640;
@@ -588,7 +643,7 @@ async function initCamera() {
         updateStatus('❌ Camera Error', 100, 'Please allow camera access and refresh the page.');
         loadingElement.innerHTML = `
             <div id="statusIndicator">
-                <p>❌ Camera Error</p>
+                <p id="statusText">❌ Camera Error</p>
                 <p class="status-subtext">Please allow camera access and refresh the page.</p>
                 <button id="retryButton" onclick="location.reload()" style="margin-top: 20px; padding: 12px 24px; background: #171717; color: white; border: none; border-radius: 8px; cursor: pointer; font-family: 'Geist Sans', sans-serif;">Retry</button>
             </div>
@@ -621,25 +676,29 @@ async function init() {
     initHands();
     initFaceMesh();
     
-    // Wait a bit for models to load
-    await new Promise(resolve => setTimeout(resolve, 1000));
+    // Wait a moment for models to initialize
+    await new Promise(resolve => setTimeout(resolve, 300));
     
     // Check if user needs to click to start (some browsers require user interaction)
     try {
         await initCamera();
     } catch (error) {
-        updateStatus('📸 Camera Ready', 90, 'Click below to start the camera');
+        updateStatus('📸 Camera Ready', 70, 'Click below to start the camera');
         // Show start button if autoplay is blocked
-        startButton.style.display = 'block';
-        startButton.onclick = async () => {
-            try {
-                await initCamera();
-                startButton.style.display = 'none';
-            } catch (e) {
-                console.error('Failed to start camera:', e);
-                updateStatus('❌ Failed to start camera', 100, 'Please check permissions');
-            }
-        };
+        if (startButton) {
+            startButton.style.display = 'block';
+            startButton.onclick = async () => {
+                try {
+                    await initCamera();
+                    if (startButton) {
+                        startButton.style.display = 'none';
+                    }
+                } catch (e) {
+                    console.error('Failed to start camera:', e);
+                    updateStatus('❌ Failed to start camera', 100, 'Please check permissions');
+                }
+            };
+        }
     }
 }
 
